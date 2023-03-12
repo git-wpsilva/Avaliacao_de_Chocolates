@@ -1,0 +1,105 @@
+---
+title: "Chocolate & Chá"
+author: "Wesley Pinheiro da Silva"
+date: "2023-03-12"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Descrição
+
+Esses códigos foram escritos no RStudio, realizando a atividade de conclusão do curso de `Análise de dados com programação em R`, para a obtenção do **Certificado Profissional de Análise de Dados**, do *Google*, aplicado pela *Coursera.*
+
+Carregando biblioteca do tidyverse, com todos os pacotes:
+```{r Carregando pacotes, message=FALSE, warning=FALSE}
+library(tidyverse)
+```
+Neste exercício foram utilizados apenas dois pacotes, o `dplyr` e o `ggplot`.
+
+Carregando base de dados:
+```{r Carregando os dados, message=FALSE, warning=FALSE}
+chocolates_df <- read.csv("flavors_of_cacao.csv")
+```
+Essa base de dados foi criado por Rachael Tatman, está em Domínio Público e pode ser acessada através deste [link](https://www.kaggle.com/datasets/rtatman/chocolate-bar-ratings)
+
+## Preparação dos dados
+
+Processo de leitura, limpeza e tratamento dos dados:
+
+```{r Preparação, message=FALSE, warning=FALSE}
+#Mudando o nome de uma coluna
+chocolates_df %>% 
+  rename(Company = Company...Maker.if.known.) %>% 
+  invisible()
+
+
+#Criando uma Tabela (tribble) com 4 colunas selecionadas
+custom_chocolates_df <- chocolates_df %>%
+  rename(Company = Company...Maker.if.known.) %>%
+  select(Rating, Cocoa.Percent,Company, Company.Location)
+  head(custom_chocolates_df)
+```
+O objetivo desta tabela é limpar os dados, dispensando as colunas que não são úteis para a análise.
+
+Após isso, é importante conhecer qual é a nota máxima nas avaliações dos chocolates.
+```{r custom_chocolates, message=FALSE, warning=FALSE}  
+#Classificação máxima 
+custom_chocolates_df %>% 
+  summarize(max(max_rating = Rating))
+```
+A maior nota para as avaliações é 5, ou seja, é uma escala que vai de 0 a 5.
+
+Para esta análise será considerado os chocolates que possuem pelo menos 80% de cacau em sua composição, além disso, como um segundo parâmetro de filtro, também será considerado chocolates que tiveram uma avaliação de no mínimo 3,75.
+```{r melhores_chocolates, message=FALSE, warning=FALSE}
+melhores_chocolates_df <- custom_chocolates_df %>%
+  filter(Rating >= 3.75 & Cocoa.Percent >=80)
+```
+
+Em seguida, salvo como variáveis duas cores que serão usadas na composição dos gráficos.
+```{r cores, message=FALSE, warning=FALSE}
+#Cores
+cor_roxa <- rgb(117, 112, 179, maxColorValue = 255)
+cor_cinza_claro <- rgb(147, 161, 161, maxColorValue = 255)
+```
+
+## Tabelas e Gráficos
+
+Com esses dados levantados, chega a hora de plotar os gráficos, o primeiro gráfico tem como objetivo mostrar quais são os países onde estão as empresas que fabricam chocolate 80% com as avaliações mais altas, a seguir o código em Linguagem R responsável pela criação do gráfico que será mostrado em sequência: 
+```{r Melhores fábricas, message=FALSE, warning=FALSE}
+#Locais que produzem as barras de chocolates mais bem avaliadas
+ggplot(data = melhores_chocolates_df) +
+  geom_bar(mapping = aes(x = Company.Location, fill = cor_roxa)) +
+  scale_fill_manual(values = cor_roxa) +
+  guides(fill=FALSE) +
+  labs(x = "Localização", y = "Quantidade", title="Países com a melhor produção",
+       subtitle = "As fabricas que produzem chocolates com nota igual ou superior a 3.75/5.0 e com pelo menos 80% de cacau" , 
+       caption = "Fonte: Chocolate Bar Ratings - Rachael Tatman")
+```
+
+Dentro dos países que obteram as avaliações mais altas, o próximo código e gráfico busca mostrar quais desses países tem as melhores avaliações em seus chocolates 80%.
+```{r Melhor avaliação, message=FALSE, warning=FALSE}
+#Lugares com as notas mais altas
+  ggplot(data = melhores_chocolates_df) +
+    geom_bar(mapping = aes(x = Company.Location, alpha = Rating, fill = Rating)) +
+    #Escala personalizada
+    scale_fill_gradient(low = cor_cinza_claro, high = cor_roxa) +
+    scale_alpha(range = c(0.3, 1)) +
+    guides(fill=FALSE, alpha = guide_legend(title = "Avaliação", override.aes = list(fill = cor_roxa, color = "white"))) +
+    labs(x = "Localização", y = "Quantidade", title = "Melhores Chocolates", fill = "", alpha = "Avaliação") +
+    theme(panel.background = element_rect(fill = "white"),
+          legend.key = element_rect(fill = "white", color = "white"),
+          legend.text = element_text(color = "black"))+
+    #Títuloos e legendas
+    labs(title="Melhores avaliações",
+         subtitle = "Melhores avaliações entre as fábricas com a melhor produção" , 
+         caption = "Fonte: Chocolate Bar Ratings - Rachael Tatman")
+```
+
+## Conclusão
+
+Apenas **Canadá** e **França** possuem uma avalição maior que 4.
